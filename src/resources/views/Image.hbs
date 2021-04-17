@@ -1,0 +1,134 @@
+<div class="container" style="margin-top:30px">
+  <div class="row">
+    <div class="col-sm-4">
+      <br>
+      <div class="form-group">
+        <label for="example-input-file">Title</label>
+        <input type="text" id="nameImg" class="form-control-file border">
+      </div>
+      <div class="form-group">
+        <label for="example-input-file">Pick Photo</label>
+        <input type="file" id="url" class="form-control-file border btn-success" onchange="readURL(this);">
+      </div>
+      <button type="submit" class="btn btn-primary submit-btn" onclick="addDataToMongo()">Submit</button>
+      <h2>List Image</h2>
+      <div class="list-items">
+
+      </div>
+    </div>
+    <div class="col-sm-8">
+      <div class="multiple-items">
+        <h2>Loadding Data</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-storage.js"></script>
+
+<script>
+  var slideIndex;
+  var file;
+  var firebaseConfig = {
+    apiKey: "AIzaSyCcNoUmZT8UEAohw6qahcaecVymvyiRVfs",
+    authDomain: "ec18a003.firebaseapp.com",
+    projectId: "ec18a003",
+    storageBucket: "ec18a003.appspot.com",
+    messagingSenderId: "1099053088352",
+    appId: "1:1099053088352:web:d74f016af64520cd638d05",
+    measurementId: "G-Y8FM64V4WH"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const ref = firebase.storage().ref();
+  // var filename = $('input[type=file]').val();
+  // var submitBtn = $('.submit-btn');
+  // KHai bào hàm hiển thị slide
+  const getData = () => {
+    // let data = [];
+    const getUser = db
+      .collection("images")
+      // .where("name", "nghia") // field - value
+      .get()
+      .then((snapshot) => {
+        let strHtml = ''
+        let strListImage = '';
+        snapshot.docs.forEach(doc => {
+          var item = doc.data();
+          console.log(item.name + '\n' + item.image)
+          strListImage += `<li><a href=${item.image} style="margin-right: 20px">${item.name}</a><img src=${item.image} 
+                            style="width: 50px height: 50px"/></li>`;
+          strHtml += `<div class="slider_item" style="display: flex;flex-direction: column;align-items: center;">
+    <img style="height: 300px" src="${item.image}" alt="abc">
+    <h4>${item.name}</h4>
+  </div>`
+
+        });
+
+
+        console.log($(".multiple-items")[0])
+        $(".multiple-items")[0].outerHTML = "<div class='multiple-items'>" + strHtml + "</div>";
+        $(".list-items")[0].outerHTML = "<div id='list-items'>" + strListImage + "</div>";
+        $('.multiple-items').slick({
+          infinite: true,
+          slidesToShow: 1,
+          slidesToScroll: 1,
+          speed: 400,
+          autoplay: true,
+          dots: true
+        });
+        //var allImages = snapshot.docs;
+      });
+
+
+  }
+  getData()
+
+  function readURL(input) {
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      var image = new Image();
+
+      reader.onload = function (e) {
+        image.src = e.target.result;
+        // console.log(image.src);
+      };
+
+      reader.readAsDataURL(input.files[0]);
+
+      file = input.files[0];
+      console.log(file.name);
+    }
+  }
+
+  async function addDataToMongo() {
+    if (file != null) {
+      var title = document.getElementById("nameImg").value;
+      const name = +new Date() + "-" + file.name;
+      const task = ref.child(name).put(file);
+      task
+        .then((snapshot) => snapshot.ref.getDownloadURL())
+        .then(async (url) => {
+          console.log(url);
+          file = null;
+          // Save url to DB
+          const res = await db.collection("images").add({
+            image: url,
+            name: title,
+          });
+          getData()
+          document.getElementById("nameImg").value = '';
+        })
+        .catch(console.error);
+    } else {
+      alert('Choose a image!');
+    }
+  }
+
+
+</script>
